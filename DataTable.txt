@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTable with External JavaScript</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        th {
+            background: linear-gradient(to bottom, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e8f4fc;
+            transition: background-color 0.2s;
+        }
+        .dataTables_wrapper {
+            margin-top: 25px;
+        }
+        a {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        a:hover {
+            color: #e74c3c;
+            text-decoration: underline;
+        }
+        .info {
+            background: linear-gradient(to right, #e7f4ff 0%, #d4edff 100%);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .refresh-btn {
+            background-color: #2ecc71;
+        }
+        .refresh-btn:hover {
+            background-color: #27ae60;
+        }
+        .api-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+            font-size: 14px;
+            border: 1px dashed #ccc;
+        }
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .status-leave {
+            background-color: #fff3e0;
+            color: #ef6c00;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .department {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .department-marketing {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        .department-engineering {
+            background-color: #e8eaf6;
+            color: #283593;
+        }
+        .department-sales {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .department-hr {
+            background-color: #ffebee;
+            color: #c2185b;
+        }
+        .department-finance {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .department-operations {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Company Employee Directory</h1>
+        <p class="subtitle">Data loaded dynamically via AJAX with External JavaScript</p>
+        
+        <div class="info">
+            <i class="fas fa-info-circle"></i> This DataTable uses <strong>external JavaScript file</strong> for cleaner code separation.
+        </div>
+        
+        <div class="error" id="errorMessage">
+            <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+        </div>
+        
+        <div class="controls">
+            <button id="loadDataBtn"><i class="fas fa-download"></i> Load Data</button>
+            <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh Page</button>
+        </div>
+        
+        <table id="employeeTable" class="display">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Salary</th>
+                    <th>Join Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded via AJAX -->
+            </tbody>
+        </table>
+        
+        <div class="api-info">
+            <strong>API Simulation:</strong> This page simulates an API response with a 1-second delay. In a real application, 
+            you would replace the simulated API with an actual endpoint URL.
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+    <!-- This would be an external JS file in a real implementation -->
+    <script src="data-table.js"></script>
+</body>
+</html>
+
+
+
+<!-- External JavaScript file (data-table.js) -->
+<script>
+// This would be in a separate file called data-table.js in a real implementation
+
+// Simulated API data
+const employeeData = [
+    {
+        id: "EMP001",
+        name: "John Doe",
+        department: "Marketing",
+        email: "john.doe@example.com",
+        status: "Active",
+        profileUrl: "https://www.example.com/employees/john-doe",
+        salary: 75000,
+        joinDate: "2020-05-15"
+    },
+    {
+        id: "EMP002",
+        name: "Jane Smith",
+        department: "Engineering",
+        email: "jane.smith@example.com",
+        status: "Active",
+        profileUrl: "https://www.example.com/employees/jane-smith",
+        salary: 98000,
+        joinDate: "2019-11-03"
+    },
+    {
+        id: "EMP003",
+        name: "Robert Johnson",
+        department: "Sales",
+        email: "robert.johnson@example.com",
+        status: "On Leave",
+        profileUrl: "",
+        salary: 65000,
+        joinDate: "2021-02-20"
+    },
+    {
+        id: "EMP004",
+        name: "Sarah Williams",
+        department: "Human Resources",
+        email: "sarah.williams@example.com",
+        status: "Active",
+        profileUrl: "https://www.example.com/employees/sarah-williams",
+        salary: 82000,
+        joinDate: "2018-08-10"
+    },
+    {
+        id: "EMP005",
+        name: "Michael Brown",
+        department: "Finance",
+        email: "michael.brown@example.com",
+        status: "Active",
+        profileUrl: "",
+        salary: 90000,
+        joinDate: "2020-01-25"
+    },
+    {
+        id: "EMP006",
+        name: "Lisa Davis",
+        department: "Operations",
+        email: "lisa.davis@example.com",
+        status: "Active",
+        profileUrl: "",
+        salary: 78000,
+        joinDate: "2022-03-12"
+    }
+];
+
+// Function to simulate API call with delay
+function fetchDataFromAPI() {
+    return new Promise((resolve, reject) => {
+        // Simulate network delay
+        setTimeout(() => {
+            // Simulate random API failure (10% chance)
+            if (Math.random() < 0.1) {
+                reject("API server unavailable. Please try again later.");
+            } else {
+                resolve(employeeData);
+            }
+        }, 1000); // 1 second delay
+    });
+}
+
+// Function to load data into the table
+function loadData() {
+    // Show loading state
+    $('#employeeTable tbody').html('<tr><td colspan="8" class="loading"><i class="fas fa-spinner fa-spin"></i> Loading data from API...</td></tr>');
+    $('#errorMessage').hide();
+    
+    // Fetch data from simulated API
+    fetchDataFromAPI()
+        .then(data => {
+            // Clear the table
+            if ($.fn.DataTable.isDataTable('#employeeTable')) {
+                $('#employeeTable').DataTable().destroy();
+            }
+            $('#employeeTable tbody').empty();
+            
+            // Initialize DataTable with columnDefs
+            $('#employeeTable').DataTable({
+                data: data,
+                pageLength: 5,
+                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                responsive: true,
+                columnDefs: [
+                    // ID column
+                    { 
+                        targets: 0,
+                        render: function(data, type, row) {
+                            return '<span style="font-weight: bold;">' + data + '</span>';
+                        }
+                    },
+                    // Name column - make rows 1, 2, and 4 links (0-indexed 0, 1, 3)
+                    { 
+                        targets: 1,
+                        render: function(data, type, row, meta) {
+                            if (meta.row === 0 || meta.row === 1 || meta.row === 3) {
+                                return '<a href="' + row.profileUrl + '" target="_blank"><i class="fas fa-user-circle"></i> ' + data + '</a>';
+                            }
+                            return '<i class="fas fa-user"></i> ' + data;
+                        }
+                    },
+                    // Department column
+                    { 
+                        targets: 2,
+                        render: function(data, type, row) {
+                            return '<span class="department department-' + data.toLowerCase().replace(/\s+/g, '-') + '">' + data + '</span>';
+                        }
+                    },
+                    // Email column
+                    { 
+                        targets: 3,
+                        render: function(data, type, row) {
+                            return '<a href="mailto:' + data + '"><i class="fas fa-envelope"></i> ' + data + '</a>';
+                        }
+                    },
+                    // Status column
+                    { 
+                        targets: 4,
+                        render: function(data, type, row) {
+                            const statusClass = data === 'Active' ? 'status-active' : 'status-leave';
+                            return '<span class="' + statusClass + '"><i class="fas fa-circle"></i> ' + data + '</span>';
+                        }
+                    },
+                    // Salary column
+                    { 
+                        targets: 5,
+                        render: function(data, type, row) {
+                            return '$' + data.toLocaleString();
+                        }
+                    },
+                    // Join Date column
+                    { 
+                        targets: 6,
+                        render: function(data, type, row) {
+                            return new Date(data).toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                            });
+                        }
+                    },
+                    // Actions column
+                    { 
+                        targets: 7,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return '<button style="padding: 5px 10px; margin-right: 5px;"><i class="fas fa-eye"></i></button>' +
+                                   '<button style="padding: 5px 10px;"><i class="fas fa-edit"></i></button>';
+                        }
+                    }
+                ],
+                columns: [
+                    { data: 'id', title: 'ID' },
+                    { data: 'name', title: 'Name' },
+                    { data: 'department', title: 'Department' },
+                    { data: 'email', title: 'Email' },
+                    { data: 'status', title: 'Status' },
+                    { data: 'salary', title: 'Salary' },
+                    { data: 'joinDate', title: 'Join Date' },
+                    { data: null, title: 'Actions' }
+                ]
+            });
+        })
+        .catch(error => {
+            $('#errorText').text(error);
+            $('#errorMessage').show();
+            $('#employeeTable tbody').html('<tr><td colspan="8" class="loading">Failed to load data. Click "Load Data" to try again.</td></tr>');
+        });
+}
+
+// Event handlers
+$(document).ready(function() {
+    // Load data when page is ready
+    loadData();
+    
+    // Add event listeners to buttons
+    $('#loadDataBtn').on('click', function() {
+        loadData();
+    });
+    
+    $('#refreshBtn').on('click', function() {
+        location.reload();
+    });
+});
+</script>
